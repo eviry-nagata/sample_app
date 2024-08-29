@@ -46,6 +46,8 @@ class UserTest < ActiveSupport::TestCase
       @user.email = invalid_address
       assert_not @user.valid?, "#{invalid_address.inspect} should be invalid"
     end
+
+    
   end
 
 # ユニークなメールアドレスかつ大文字小文字を区別しないテスト
@@ -72,5 +74,9 @@ class UserTest < ActiveSupport::TestCase
   test "password should have a minimum length" do
     @user.password = @user.password_confirmation = "a" * 5
     assert_not @user.valid?
+  end
+# authenticated?メソッドがnilダイジェストの場合にfalseを返すことを確認するテスト
+  test "authenticated? should return false for a user with nil digest" do
+    assert_not @user.authenticated?('')
   end
 end

@@ -77,6 +77,6 @@ class UserTest < ActiveSupport::TestCase
   end
 # authenticated?メソッドがnilダイジェストの場合にfalseを返すことを確認するテスト
   test "authenticated? should return false for a user with nil digest" do
-    assert_not @user.authenticated?('')
+    assert_not @user.authenticated?(:remember, '')
   end
 end

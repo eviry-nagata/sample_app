@@ -1,6 +1,18 @@
 class User < ApplicationRecord
   # dependent: :destroyは、ユーザーが削除されたときに、そのユーザーに関連付けられたマイクロポストも一緒に削除するように指示している
   has_many :microposts, dependent: :destroy
+  # この行は、ユーザーがフォローしているユーザーを取得するための関連付けを追加している
+  has_many :active_relationships, class_name:  "Relationship",
+                                  foreign_key: "follower_id",
+                                  dependent:   :destroy
+# この行は、ユーザーがフォローしているユーザーを取得するための関連付けを追加している
+# dependent: :destroyは、ユーザーが削除されたときに、そのユーザーに関連付けられたリレーションシップも一緒に削除するように指示している
+  has_many :passive_relationships, class_name:  "Relationship",
+    foreign_key: "followed_id",
+    dependent:   :destroy
+  has_many :following, through: :active_relationships, source: :followed
+  # この行は、ユーザーがフォローされているユーザーを取得するための関連付けを追加している
+  has_many :followers, through: :passive_relationships, source: :follower
   attr_accessor :remember_token, :activation_token, :reset_token
   before_save   :downcase_email
   before_create :create_activation_digest
@@ -76,8 +88,27 @@ class User < ApplicationRecord
    
   # 完全な実装は次章の「ユーザーをフォローする」を参照
   # ？はSQLインジェクションの対応
-  def feed
-    Micropost.where("user_id = ?", id)
+ # ユーザーのステータスフィードを返す
+ def feed
+  following_ids = "SELECT followed_id FROM relationships
+                   WHERE follower_id = :user_id"
+  Micropost.where("user_id IN (#{following_ids})
+                   OR user_id = :user_id", user_id: id)
+end
+
+  # ユーザーをフォローする
+  def follow(other_user)
+    following << other_user
+  end
+
+  # ユーザーをフォロー解除する
+  def unfollow(other_user)
+    active_relationships.find_by(followed_id: other_user.id).destroy
+  end
+
+  # 現在のユーザーがフォローしてたらtrueを返す
+  def following?(other_user)
+    following.include?(other_user)
   end
 
   private
